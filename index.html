@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注音打字 RPG 大冒險</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <audio id="bgm" src="your-bgm-file.mp3" loop></audio>
+
+    <div id="game-container">
+        
+        <div id="character-select-screen" class="screen active">
+            <h1>✨ 選擇你的英雄 ✨</h1>
+            <p class="subtitle">點擊頭像出發冒險！</p>
+            
+            <div class="character-grid">
+                <div class="character-card unlocked" id="char-01">
+                    <div class="sprite-preview novice-sprite"></div>
+                    <div class="character-info">
+                        <h3>新手冒險家 <span class="voice-tag">(男聲)</span></h3>
+                        <p class="status">目前可用</p>
+                    </div>
+                </div>
+
+                <div class="character-card locked" id="char-02">
+                    <div class="sprite-preview locked-sprite">❓</div>
+                    <div class="character-info">
+                        <h3>魔法使 <span class="voice-tag">(女聲)</span></h3>
+                        <p class="status">第 1 關解鎖</p>
+                    </div>
+                </div>
+                
+                </div>
+            
+            <button id="start-btn" disabled>準備出發！</button>
+        </div>
+
+        <div id="battle-screen" class="screen hidden">
+            <div class="top-hud">
+                <div class="hero-stats">
+                    <div class="hp-bar-container">
+                        <div class="hp-bar" id="hero-hp" style="width: 100%;"></div>
+                    </div>
+                    <div class="potions">🧪 藥水: <span id="potion-count">0</span></div>
+                </div>
+                
+                <div class="stage-info">第 1 關</div>
+                
+                <div class="monster-stats">
+                    <div class="hp-bar-container">
+                        <div class="hp-bar monster" id="monster-hp" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="battle-arena">
+                <div class="hero-area">
+                    <div id="hero-sprite" class="sprite-box"></div> 
+                </div>
+                
+                <div class="monster-area">
+                    <div id="monster-sprite" class="sprite-box"></div>
+                    <div id="question-bubble">ㄅ</div>
+                </div>
+            </div>
+
+            <div class="typing-ui">
+                <div id="feedback-message"></div> 
+                
+                <div class="keyboard-prompt">請使用鍵盤輸入對應注音</div>
+                <div class="combo-meter">連續答對: <span id="combo-count">0</span> 次 (滿 5 次有機會獲得藥水！)</div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
