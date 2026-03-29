@@ -258,3 +258,51 @@ body {
     box-shadow: 0 0 15px rgba(230, 126, 34, 0.7); /* 加上發光效果 */
     transform: translateY(-5px); /* 維持 hover 的浮起高度 */
 }
+/* ================= CSS 裁切魔法 (JRPG 3x3 圖片處理) ================= */
+
+/* ✨ 重點修正 1：角色選單的圖片裁切 ✨ */
+.sprite-preview {
+    width: 60px; /* 一張裁切好的小圖寬度 */
+    height: 60px; /* 一張裁切好的小圖高度 */
+    background-size: 300% 300%; /* 🌟 神奇魔法：讓 3x3 九宮格圖片放大 3 倍，剛好只顯示其中一格 */
+    background-position: 0% 0%; /* 🌟 預設位置在左上角 (第一張圖) */
+    background-repeat: no-repeat;
+    margin: 0 auto 10px;
+    border-radius: 5px;
+    display: flex; /* 讓文字(?)置中用 */
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+    font-weight: bold;
+    color: #fff;
+    overflow: hidden; /* 防止圖片超出容器 */
+}
+
+/* ✨ 重點修正 2：沒解鎖的卡片樣式 ✨ */
+.character-card.locked {
+    background: #bdc3c7; /* 卡片背景變灰 */
+    cursor: not-allowed;
+    filter: none; /* 🌟 拿掉灰色濾鏡，因為 JS 已經不塞圖片網址了 */
+}
+
+/* 鎖定時顯示的大問號佔位符 */
+.sprite-preview.locked-placeholder {
+    background-color: #7f8c8d; /* 深灰色背景 */
+    background-image: none !important; /* 🌟 強制拿掉圖片 (即使 JS 有塞圖片網址也不會顯示) */
+}
+
+/* ✨ 重點修正 3：戰鬥畫面的英雄裁切 ( image_5.png 修正) ✨ */
+#hero-sprite {
+    width: 120px; /* 戰鬥時角色大一點 */
+    height: 120px;
+    background-size: 300% 300%; /* 🌟 戰鬥畫面也使用放大魔法 */
+    background-position: 0% 0%; /* 🌟 預設位置在左上角 (待機狀態) */
+    background-repeat: no-repeat;
+}
+
+/* 角色選取中的框框樣式 (維持不變) */
+.character-card.unlocked.selected {
+    border-color: #e67e22; 
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.7); 
+    transform: translateY(-5px); 
+}
