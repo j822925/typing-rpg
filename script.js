@@ -12,7 +12,7 @@ const heroNames = [
 ];
 
 // 初始化遊戲狀態
-let currentGameStage = 1; // 目前關卡 (測試用，先預設第 1 關)
+let currentGameStage = 1; // 目前關卡 (測試用，設定為第 1 關)
 let selectedHeroId = null; // 目前選中的英雄 ID (1~25)
 
 // ==========================================
@@ -37,24 +37,26 @@ function renderCharacterSelect() {
         const heroName = heroNames[i - 1]; // 因為程式數數是從 0 開始，所以要減 1
         
         // 🌟 自動補零邏輯 (把 1 變成 01，10 變成 10)
-        // 這裡會對接你上傳的 char01.png 到 char25.png
         const imgNum = i < 10 ? '0' + i : i; 
         const spriteUrl = `char${imgNum}.png`;
 
-        // 🌟 解鎖邏輯：
-        // 第 1 隻 (i=1) 永遠開啟。
-        // 其他隻根據關卡解鎖 (每關解鎖 2 隻，所以第 2 隻是 i=3, 關卡=1)
-        // 公式：如果 (關卡-1) * 2 + 1 >= i，表示已解鎖。
-        // 例如：currentGameStage = 1, 公式為 (1-1)*2+1 = 1。只有 i <= 1 的冒險家解鎖。
+        // 🌟 修正後的解鎖邏輯：
         let isUnlocked = false;
         let statusText = "";
         
+        // 1. 冒險家永遠解鎖
         if (i === 1) {
             isUnlocked = true;
             statusText = "目前可用";
         } else {
-            // 計算解鎖這隻角色需要第幾關
-            const unlockAtStage = Math.ceil((i - 1) / 2); // 例如 i=2 或 i=3 時，結果都是 1
+            // 2. 計算這隻角色「需要第幾關」才能解鎖
+            // 公式：第 (i-1)/2 關。例如 i=2 或 i=3 時，結果都是 ceil(0.5)=1，所以是第 1 關解鎖。
+            // 老師希望第 1 關只用冒險家，所以我們要讓其他隻需求「關卡+1」
+            // 修正公式：Math.ceil((i - 1) / 2) + 1。
+            // 這樣男術士(i=2)的需求就會變成 Math.ceil(0.5)+1 = 第 2 關。
+            const unlockAtStage = Math.ceil((i - 1) / 2) + 1; 
+
+            // 判斷目前關卡是否達到需求
             if (currentGameStage >= unlockAtStage) {
                 isUnlocked = true;
                 statusText = "目前可用";
@@ -63,15 +65,23 @@ function renderCharacterSelect() {
             }
         }
 
-        // 🌟 產生 HTML 卡片結構
+        // 🌟 產生 HTML 卡片結構 (修正顯示邏輯)
         const charCard = document.createElement('div');
         charCard.className = `character-card ${isUnlocked ? 'unlocked' : 'locked'}`;
         charCard.dataset.heroId = i; // 把 ID 偷偷記在卡片上，之後點擊要用
 
+        // ✨ 重點修正 1：如果沒解鎖，根本不設定圖片！ ✨
+        let spriteHtml = '';
+        if (isUnlocked) {
+            // 如果已解鎖，生成圖片區塊。CSS 會處理裁切，JS 只需要給網址。
+            spriteHtml = `<div class="sprite-preview" style="background-image: url('${spriteUrl}');"></div>`;
+        } else {
+            // 如果鎖定，只給一個帶有問號的空白佔位符，完全不載入圖片。
+            spriteHtml = `<div class="sprite-preview locked-placeholder">？</div>`;
+        }
+
         charCard.innerHTML = `
-            <div class="sprite-preview" style="background: url('${spriteUrl}') center no-repeat; background-size: contain;">
-                ${isUnlocked ? '' : '❓'}
-            </div>
+            ${spriteHtml}
             <div class="character-info">
                 <h3>${heroName}</h3>
                 <p class="status">${statusText}</p>
@@ -99,7 +109,7 @@ function handleCharacterSelect(heroId, clickedCard) {
     const allCards = document.querySelectorAll('.character-card');
     allCards.forEach(card => card.classList.remove('selected'));
 
-    // 2. 幫點擊的這張卡片加上「選取中」框框 (需要新增 CSS 樣式)
+    // 2. 幫點擊的這張卡片加上「選取中」框框
     clickedCard.classList.add('selected');
 
     // 3. 記錄選中的英雄 ID，並亮起「準備出發」按鈕
@@ -123,10 +133,10 @@ startBtn.addEventListener('click', function() {
         const imgNum = selectedHeroId < 10 ? '0' + selectedHeroId : selectedHeroId;
         const spriteUrl = `char${imgNum}.png`;
         
-        // 這裡需要先把 JRPG 的 3x3 圖片裁切設定好才能正確顯示，先預設抓整張圖做測試
-        heroSpriteInBattle.style.background = `url('${spriteUrl}') center no-repeat`;
-        heroSpriteInBattle.style.backgroundSize = 'contain';
-        heroSpriteInBattle.style.backgroundColor = 'transparent'; // 把測試用的背景色拿掉
+        // ✨ 重點修正 2：戰鬥畫面也只載入一張圖 (預設待機) ✨
+        // 我們要在 CSS 裡把裁切設定好，JS 只要給圖片網址就好。
+        heroSpriteInBattle.style.backgroundImage = `url('${spriteUrl}')`;
+        heroSpriteInBattle.style.backgroundColor = 'transparent'; // 把測試用的灰色背景拿掉
     }
 });
 
