@@ -252,3 +252,9 @@ body {
     margin-top: 10px;
     font-weight: bold;
 }
+/* ================= 角色選取中的框框樣式 ================= */
+.character-card.unlocked.selected {
+    border-color: #e67e22; /* 選中時變橘色粗框 */
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.7); /* 加上發光效果 */
+    transform: translateY(-5px); /* 維持 hover 的浮起高度 */
+}
