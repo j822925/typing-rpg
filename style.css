@@ -1,4 +1,4 @@
-/* 基礎設定 */
+/* 基礎設定維持不變 */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -13,6 +13,7 @@ body {
     align-items: center;
     height: 100vh;
     color: #333;
+    overflow: hidden; /* 防止 body 出現捲軸 */
 }
 
 #game-container {
@@ -25,7 +26,6 @@ body {
     position: relative;
 }
 
-/* 畫面切換控制 */
 .screen {
     width: 100%;
     height: 100%;
@@ -48,48 +48,75 @@ body {
     z-index: 10;
 }
 
-/* ================= 角色選擇畫面 ================= */
+/* ================= 角色選擇畫面 (修正版) ================= */
 #character-select-screen {
-    padding: 30px;
+    padding: 20px 30px; /* 稍微減少上下 padding，給下方更多空間 */
     text-align: center;
     background: linear-gradient(135deg, #e0eafc, #cfdef3);
+    overflow: hidden; /* 讓整個選單畫面不出現全域捲軸 */
 }
 
 #character-select-screen h1 {
-    font-size: 36px;
+    font-size: 32px;
     color: #2980b9;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .subtitle {
-    font-size: 18px;
+    font-size: 16px;
     color: #7f8c8d;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
-.character-grid {
+/* 🌟 重點修正：兩個新的角色區塊排版 🌟 */
+
+/* 上方：主角區域 (單獨一個) */
+#hero-starter-area {
     display: flex;
-    gap: 20px;
     justify-content: center;
-    flex-wrap: wrap;
-    max-height: 400px;
-    overflow-y: auto;
-    padding: 10px;
+    margin-bottom: 20px;
+    position: relative;
 }
 
+/* 下方：其他角色區域 (四個一排，會捲動) */
+#hero-collection-area {
+    flex: 1; /* 佔滿剩餘高度 */
+    overflow-y: auto; /* 只有這裡出現捲軸，image_8.png 的感覺 */
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 180px); /* 🌟 強制四個一排 🌟 */
+    gap: 15px;
+    justify-content: center;
+    border-top: 2px solid rgba(0,0,0,0.1); /* 加個小分隔線 */
+}
+
+/* 美化捲軸 (配合 JRPG 風格) */
+#hero-collection-area::-webkit-scrollbar {
+    width: 8px;
+}
+#hero-collection-area::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+}
+#hero-collection-area::-webkit-scrollbar-thumb {
+    background: #bdc3c7;
+    border-radius: 4px;
+}
+
+/* 角色卡片基礎樣式維持，調整大小 */
 .character-card {
     width: 180px;
     background: white;
     border-radius: 10px;
-    padding: 15px;
+    padding: 12px;
     border: 3px solid transparent;
     cursor: pointer;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .character-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.15);
 }
 
 .character-card.unlocked {
@@ -99,33 +126,38 @@ body {
 .character-card.locked {
     background: #bdc3c7;
     cursor: not-allowed;
-    filter: grayscale(100%);
 }
 
+/* CSS 裁切魔法維持，調整大小 */
 .sprite-preview {
-    width: 60px;
+    width: 60px; 
     height: 60px;
-    margin: 0 auto 10px;
-    background-color: #ddd; 
-    display: flex;
+    background-size: 300% 300%; 
+    background-position: 0% 0%; 
+    background-repeat: no-repeat;
+    margin: 0 auto 8px;
+    border-radius: 5px;
+    display: flex; 
     justify-content: center;
     align-items: center;
-    font-size: 24px;
-    border-radius: 5px;
+    font-size: 36px;
+    font-weight: bold;
+    color: #fff;
+    overflow: hidden; 
+}
+
+.character-card.locked .sprite-preview {
+    background-color: #7f8c8d; 
+    background-image: none !important; 
 }
 
 .character-info h3 {
-    font-size: 18px;
-    margin-bottom: 5px;
-}
-
-.voice-tag {
-    font-size: 14px;
-    color: #8e44ad;
+    font-size: 16px;
+    margin-bottom: 3px;
 }
 
 .status {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     color: #27ae60;
 }
@@ -135,15 +167,20 @@ body {
 }
 
 #start-btn {
-    margin-top: 20px;
-    padding: 15px 40px;
-    font-size: 24px;
+    margin-top: 15px;
+    padding: 12px 40px;
+    font-size: 20px;
     font-weight: bold;
     background-color: #27ae60;
     color: white;
     border: none;
     border-radius: 30px;
     cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#start-btn:hover {
+    background-color: #2ecc71;
 }
 
 #start-btn:disabled {
@@ -151,7 +188,13 @@ body {
     cursor: not-allowed;
 }
 
-/* ================= 戰鬥畫面 ================= */
+.character-card.unlocked.selected {
+    border-color: #e67e22; 
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.7); 
+    transform: translateY(-3px); 
+}
+
+/* ================= 戰鬥畫面维持维持維持维持 ================= */
 #battle-screen {
     background-color: #a4b0be; 
 }
@@ -160,19 +203,19 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    padding: 15px;
     background: rgba(0, 0, 0, 0.6);
     color: white;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
 }
 
 .hp-bar-container {
     width: 200px;
-    height: 25px;
+    height: 20px;
     background: #444;
     border: 2px solid #fff;
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
     margin-bottom: 5px;
 }
@@ -187,22 +230,41 @@ body {
     background: #e74c3c;
 }
 
+/* ✨ 重點修正：戰鬥 HUD 裡的藥水區排版 ✨ */
+.potions-ui {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 用來承載你的 potion.png 精靈圖的容器 */
+#potion-image {
+    width: 32px; /* HUD 裡小一點，維持精緻感 */
+    height: 32px;
+    background: url('potion.png') center/contain no-repeat; /* 🌟 召喚你的 potion.png 🌟 */
+    border-radius: 5px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); /* 加上陰影更突出 */
+}
+
+#potion-count-display {
+    font-size: 20px;
+    color: #e74c3c; /* 數字使用紅色跟藥水液體呼應 */
+}
+
 .battle-arena {
     flex: 1;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 100px;
+    padding: 0 80px;
 }
 
-.sprite-box {
-    width: 120px;
+#hero-sprite {
+    width: 120px; 
     height: 120px;
-    background-color: rgba(255,255,255,0.5); 
-}
-
-.monster-area {
-    position: relative;
+    background-size: 300% 300%; 
+    background-position: 0% 0%; 
+    background-repeat: no-repeat;
 }
 
 #question-bubble {
@@ -221,7 +283,7 @@ body {
 }
 
 .typing-ui {
-    height: 120px;
+    height: 100px;
     background: rgba(255, 255, 255, 0.9);
     display: flex;
     flex-direction: column;
@@ -229,80 +291,30 @@ body {
     align-items: center;
     border-top: 4px solid #34495e;
     position: relative;
+    padding: 10px;
 }
 
 #feedback-message {
     position: absolute;
-    top: -40px;
-    font-size: 24px;
+    top: -30px;
+    font-size: 20px;
     font-weight: bold;
-    color: #e74c3c;
-    text-shadow: 1px 1px 2px white;
 }
 
 .keyboard-prompt {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: bold;
     color: #2980b9;
 }
 
 .combo-meter {
-    font-size: 16px;
+    font-size: 15px;
     color: #e67e22;
-    margin-top: 10px;
+    margin-top: 5px;
     font-weight: bold;
 }
-/* ================= 角色選取中的框框樣式 ================= */
-.character-card.unlocked.selected {
-    border-color: #e67e22; /* 選中時變橘色粗框 */
-    box-shadow: 0 0 15px rgba(230, 126, 34, 0.7); /* 加上發光效果 */
-    transform: translateY(-5px); /* 維持 hover 的浮起高度 */
-}
-/* ================= CSS 裁切魔法 (JRPG 3x3 圖片處理) ================= */
 
-/* ✨ 重點修正 1：角色選單的圖片裁切 ✨ */
-.sprite-preview {
-    width: 60px; /* 一張裁切好的小圖寬度 */
-    height: 60px; /* 一張裁切好的小圖高度 */
-    background-size: 300% 300%; /* 🌟 神奇魔法：讓 3x3 九宮格圖片放大 3 倍，剛好只顯示其中一格 */
-    background-position: 0% 0%; /* 🌟 預設位置在左上角 (第一張圖) */
-    background-repeat: no-repeat;
-    margin: 0 auto 10px;
-    border-radius: 5px;
-    display: flex; /* 讓文字(?)置中用 */
-    justify-content: center;
-    align-items: center;
-    font-size: 36px;
-    font-weight: bold;
-    color: #fff;
-    overflow: hidden; /* 防止圖片超出容器 */
-}
-
-/* ✨ 重點修正 2：沒解鎖的卡片樣式 ✨ */
-.character-card.locked {
-    background: #bdc3c7; /* 卡片背景變灰 */
-    cursor: not-allowed;
-    filter: none; /* 🌟 拿掉灰色濾鏡，因為 JS 已經不塞圖片網址了 */
-}
-
-/* 鎖定時顯示的大問號佔位符 */
-.sprite-preview.locked-placeholder {
-    background-color: #7f8c8d; /* 深灰色背景 */
-    background-image: none !important; /* 🌟 強制拿掉圖片 (即使 JS 有塞圖片網址也不會顯示) */
-}
-
-/* ✨ 重點修正 3：戰鬥畫面的英雄裁切 ( image_5.png 修正) ✨ */
-#hero-sprite {
-    width: 120px; /* 戰鬥時角色大一點 */
-    height: 120px;
-    background-size: 300% 300%; /* 🌟 戰鬥畫面也使用放大魔法 */
-    background-position: 0% 0%; /* 🌟 預設位置在左上角 (待機狀態) */
-    background-repeat: no-repeat;
-}
-
-/* 角色選取中的框框樣式 (維持不變) */
-.character-card.unlocked.selected {
-    border-color: #e67e22; 
-    box-shadow: 0 0 15px rgba(230, 126, 34, 0.7); 
-    transform: translateY(-5px); 
+.combo-high-score {
+    font-size: 18px;
+    color: #c0392b;
 }
