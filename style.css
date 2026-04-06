@@ -318,3 +318,14 @@ body {
     font-size: 18px;
     color: #c0392b;
 }
+/* 把飛走的怪物區域和氣泡抓回來 */
+.monster-area {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+#question-bubble {
+    top: -60px; /* 稍微往下調一點，確保不會被切到 */
+    z-index: 100; /* 確保它顯示在最上層 */
+}
