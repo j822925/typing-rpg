@@ -1,6 +1,9 @@
 // ==========================================
-// 1. 遊戲資料設定區 (維持不變)
+// 1. 遊戲資料與 API 設定區
 // ==========================================
+
+// 🌟 你的專屬 Google Apps Script 伺服器網址
+const API_URL = "https://script.google.com/macros/s/AKfycbwRTcfwm75bUnYtwXS5xIaHZQU6HT9-1yNbMgeSFVPgH81q6-exaKxz_5RZkp9znWo/exec";
 
 const heroNames = [
     "冒險家", "男術士", "男武道家", "女武道家", "女刺客", "男刺客", 
@@ -10,20 +13,30 @@ const heroNames = [
     "小白帽布蘭琪"
 ];
 
+// 玩家個人資料
+let playerUUID = "";
+let playerName = "";
 let currentGameStage = 1; 
+let potionCount = 0; 
 let selectedHeroId = null; 
 
 // ==========================================
-// 2. 抓取 HTML 元素 (DOM 元素 - 修正版)
+// 2. 抓取 HTML 元素
 // ==========================================
-
-// ✨ 新增：兩個獨立的角色選單區域
-const heroStarterArea = document.getElementById('hero-starter-area');
-const heroCollectionArea = document.getElementById('hero-collection-area');
-
-const startBtn = document.getElementById('start-btn');
+const loginScreen = document.getElementById('login-screen');
 const charSelectScreen = document.getElementById('character-select-screen');
 const battleScreen = document.getElementById('battle-screen');
+
+const nameInput = document.getElementById('player-name-input');
+const loginBtn = document.getElementById('login-btn');
+const loadingMsg = document.getElementById('loading-msg');
+
+const displayPlayerName = document.getElementById('display-player-name');
+const saveStatus = document.getElementById('save-status');
+
+const heroStarterArea = document.getElementById('hero-starter-area');
+const heroCollectionArea = document.getElementById('hero-collection-area');
+const startBtn = document.getElementById('start-btn');
 const heroSpriteInBattle = document.getElementById('hero-sprite');
 const stageDisplay = document.getElementById('current-stage-display');
 
@@ -34,15 +47,111 @@ const potionCountDisplay = document.getElementById('potion-count');
 const feedbackMessage = document.getElementById('feedback-message');
 
 // ==========================================
-// 3. 生成角色選擇畫面 (🌟 重點修正：拆分排版邏輯 🌟)
+// 3. 雲端存檔與登入系統
+// ==========================================
+
+// 產生唯一的 UUID
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// 點擊「進入遊戲」按鈕
+loginBtn.addEventListener('click', async function() {
+    const inputName = nameInput.value.trim();
+    if (!inputName) {
+        alert("請輸入座號或姓名喔！");
+        return;
+    }
+
+    loginBtn.classList.add('hidden');
+    loadingMsg.classList.remove('hidden');
+
+    playerName = inputName;
+    
+    // 檢查瀏覽器有沒有記住這台電腦的 UUID
+    let savedUUID = localStorage.getItem('typing_rpg_uuid');
+    
+    if (savedUUID) {
+        // 如果有，就用這個 UUID 去雲端抓資料
+        playerUUID = savedUUID;
+        await loadProgressFromCloud();
+    } else {
+        // 如果是全新玩家，產生新 UUID，並建立初始存檔
+        playerUUID = generateUUID();
+        localStorage.setItem('typing_rpg_uuid', playerUUID);
+        await saveProgressToCloud();
+    }
+
+    // 準備完成，切換到角色選單
+    displayPlayerName.textContent = playerName;
+    potionCountDisplay.textContent = potionCount; // 更新畫面上的藥水數量
+    
+    loginScreen.classList.remove('active');
+    loginScreen.classList.add('hidden');
+    charSelectScreen.classList.remove('hidden');
+    charSelectScreen.classList.add('active');
+    
+    renderCharacterSelect();
+});
+
+// 向 Google 試算表要求讀取資料
+async function loadProgressFromCloud() {
+    saveStatus.textContent = "🔄 讀取中...";
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'load', uuid: playerUUID })
+        });
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            currentGameStage = parseInt(result.stage) || 1;
+            potionCount = parseInt(result.potions) || 0;
+            playerName = result.name; // 確保名稱與雲端一致
+            console.log("讀取成功！目前關卡:", currentGameStage);
+        }
+        saveStatus.textContent = "✔️ 已同步";
+    } catch (error) {
+        console.error("讀取失敗", error);
+        saveStatus.textContent = "⚠️ 離線模式";
+    }
+}
+
+// 將資料存上 Google 試算表
+async function saveProgressToCloud() {
+    saveStatus.textContent = "⬆️ 存檔中...";
+    saveStatus.style.color = "#e67e22";
+    try {
+        await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'save',
+                uuid: playerUUID,
+                name: playerName,
+                stage: currentGameStage,
+                potions: potionCount
+            })
+        });
+        saveStatus.textContent = "✔️ 已同步";
+        saveStatus.style.color = "#27ae60";
+    } catch (error) {
+        console.error("存檔失敗", error);
+        saveStatus.textContent = "⚠️ 存檔失敗";
+        saveStatus.style.color = "#c0392b";
+    }
+}
+
+// ==========================================
+// 4. 角色選單系統
 // ==========================================
 
 function renderCharacterSelect() {
-    // 每次生成前先清空格子
     heroStarterArea.innerHTML = '';
     heroCollectionArea.innerHTML = '';
 
-    // 開始跑點名 (i 號從 1 到 25)
     for (let i = 1; i <= heroNames.length; i++) {
         const heroName = heroNames[i - 1]; 
         const imgNum = i < 10 ? '0' + i : i; 
@@ -51,12 +160,10 @@ function renderCharacterSelect() {
         let isUnlocked = false;
         let statusText = "";
         
-        // 冒險家(i=1)永遠解鎖
         if (i === 1) {
             isUnlocked = true;
             statusText = "目前可用";
         } else {
-            // 男術士(i=2)需求第2關
             const unlockAtStage = Math.ceil((i - 1) / 2) + 1; 
             if (currentGameStage >= unlockAtStage) {
                 isUnlocked = true;
@@ -66,17 +173,13 @@ function renderCharacterSelect() {
             }
         }
 
-        // 產生卡片基礎結構
         const charCard = document.createElement('div');
         charCard.className = `character-card ${isUnlocked ? 'unlocked' : 'locked'}`;
         charCard.dataset.heroId = i; 
 
-        let spriteHtml = '';
-        if (isUnlocked) {
-            spriteHtml = `<div class="sprite-preview" style="background-image: url('${spriteUrl}');"></div>`;
-        } else {
-            spriteHtml = `<div class="sprite-preview locked-placeholder">？</div>`;
-        }
+        let spriteHtml = isUnlocked 
+            ? `<div class="sprite-preview" style="background-image: url('${spriteUrl}');"></div>` 
+            : `<div class="sprite-preview locked-placeholder">？</div>`;
 
         charCard.innerHTML = `
             ${spriteHtml}
@@ -86,36 +189,26 @@ function renderCharacterSelect() {
             </div>
         `;
 
-        // 幫「已解鎖」的卡片加上點名功能
         if (isUnlocked) {
             charCard.addEventListener('click', function() {
-                handleCharacterSelect(i, charCard);
+                const allCards = document.querySelectorAll('.character-card');
+                allCards.forEach(card => card.classList.remove('selected'));
+                charCard.classList.add('selected');
+                selectedHeroId = i;
+                startBtn.disabled = false; 
             });
         }
 
-        // ✨ 🌟 關鍵修正：判斷要把卡片塞到哪裡 🌟 ✨
         if (i === 1) {
-            // 如果是冒險家，塞到上方主角區
             heroStarterArea.appendChild(charCard);
         } else {
-            // 如果是其他角色，塞到下方收集區
             heroCollectionArea.appendChild(charCard);
         }
     }
 }
 
-function handleCharacterSelect(heroId, clickedCard) {
-    // 把選單中所有的「選取中」框框拿掉 (需要尋找兩個區域)
-    const allCards = document.querySelectorAll('.character-card');
-    allCards.forEach(card => card.classList.remove('selected'));
-
-    clickedCard.classList.add('selected');
-    selectedHeroId = heroId;
-    startBtn.disabled = false; 
-}
-
 // ==========================================
-// 4. 戰鬥系統核心邏輯
+// 5. 戰鬥系統核心邏輯
 // ==========================================
 
 const zhuyinMap = {
@@ -128,7 +221,6 @@ const zhuyinMap = {
 const zhuyinArray = Object.values(zhuyinMap);
 let currentQuestion = ""; 
 let combo = 0; 
-let potionCount = 0; 
 let monsterHp = 100; 
 
 function generateQuestion() {
@@ -148,16 +240,18 @@ function heroAttack() {
         monsterHpBar.style.width = monsterHp + '%';
         
         setTimeout(() => {
-            alert(`太棒了！成功擊敗第 ${currentGameStage} 關的怪物！`); 
+            alert(`太棒了！成功擊敗第 ${currentGameStage} 關的怪物！\n遊戲進度已自動儲存 💾`); 
             currentGameStage++; 
-            stageDisplay.textContent = `第 ${currentGameStage} 關`; // 更新戰鬥介面關卡
+            stageDisplay.textContent = `第 ${currentGameStage} 關`; 
             monsterHp = 100; 
             monsterHpBar.style.width = monsterHp + '%';
-            combo = 0; // 過關後重置 Combo，讓下一關重新計算藥水
+            combo = 0; 
             comboCountDisplay.textContent = combo;
-            generateQuestion();
             
-            // 重要：過關後也需要重新渲染選單，以便孩子隨時退出去看新解鎖角色
+            // 🌟 過關時，自動儲存進度到 Google 試算表 🌟
+            saveProgressToCloud(); 
+            
+            generateQuestion();
             renderCharacterSelect(); 
         }, 300);
     } else {
@@ -180,13 +274,14 @@ document.addEventListener('keydown', function(event) {
             feedbackMessage.textContent = "Perfect!";
             feedbackMessage.style.color = "#2ecc71"; 
             
-            // ✨ 🌟 關鍵修正：每連續答對 5 題，100% 掉落藥水 🌟 ✨
             if (combo > 0 && combo % 5 === 0) {
-                // 機率移除，改成百分之百獲得
                 potionCount++;
                 potionCountDisplay.textContent = potionCount;
-                feedbackMessage.textContent = "獲得藥水了！🧪"; // 在訊息加入小圖示提示
-                feedbackMessage.style.color = "#e67e22"; // 顯示橘黃色
+                feedbackMessage.textContent = "獲得藥水了！🧪"; 
+                feedbackMessage.style.color = "#e67e22"; 
+                
+                // 拿到藥水也自動存檔一下
+                saveProgressToCloud();
             }
             heroAttack();
 
@@ -197,14 +292,12 @@ document.addEventListener('keydown', function(event) {
             feedbackMessage.style.color = "#e74c3c"; 
         }
 
-        setTimeout(() => {
-            feedbackMessage.textContent = "";
-        }, 800);
+        setTimeout(() => { feedbackMessage.textContent = ""; }, 800);
     }
 });
 
 // ==========================================
-// 5. 點擊「準備出發」，進入戰鬥畫面
+// 6. 點擊「準備出發」，進入戰鬥
 // ==========================================
 startBtn.addEventListener('click', function() {
     if (selectedHeroId !== null) {
@@ -220,18 +313,20 @@ startBtn.addEventListener('click', function() {
         heroSpriteInBattle.style.backgroundColor = 'transparent'; 
         heroSpriteInBattle.style.transition = 'transform 0.15s ease'; 
 
-        // 🌟 重置戰鬥相關狀態
+        stageDisplay.textContent = `第 ${currentGameStage} 關`;
         monsterHp = 100;
         monsterHpBar.style.width = '100%';
         combo = 0;
         comboCountDisplay.textContent = combo;
+        potionCountDisplay.textContent = potionCount;
         feedbackMessage.textContent = "";
 
+        // 🌟 如果你有放 monster01.png 等怪物圖片，之後可以在這裡動態載入
+        // 為了不讓畫面空著，先用 CSS 裡的設定或暫不顯示
+        
         generateQuestion();
     }
 });
 
-// ==========================================
-// 🌟 遊戲一開始：執行初始化
-// ==========================================
-renderCharacterSelect();
+// 注意：現在遊戲一開始不會直接呼叫 renderCharacterSelect() 了，
+// 而是等玩家點擊「進入遊戲」按鈕後才執行。
